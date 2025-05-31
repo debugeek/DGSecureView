@@ -15,53 +15,32 @@ struct DGSecureView {
     private static let xorKey: UInt8 = 0xEE
 
     static let secureComponents: (UIView, UITextField)? = {
-        var buf: UnsafeMutablePointer<UInt8>
-        var len: size_t = 0
-
+        let bytes: [UInt8]
         if #available(iOS 15.0, *) {
-            let bytes: [UInt8] = [
-                0x5F ^ xorKey, 0x55 ^ xorKey, 0x49 ^ xorKey, 0x54 ^ xorKey, 0x65 ^ xorKey, 0x78 ^ xorKey,
-                0x74 ^ xorKey, 0x4C ^ xorKey, 0x61 ^ xorKey, 0x79 ^ xorKey, 0x6F ^ xorKey, 0x75 ^ xorKey,
-                0x74 ^ xorKey, 0x43 ^ xorKey, 0x61 ^ xorKey, 0x6E ^ xorKey, 0x76 ^ xorKey, 0x61 ^ xorKey,
-                0x73 ^ xorKey, 0x56 ^ xorKey, 0x69 ^ xorKey, 0x65 ^ xorKey, 0x77 ^ xorKey, 0x00 ^ xorKey
+            bytes = [
+                0xB1, 0xBB, 0xA7, 0xBA, 0x8B, 0x96, 0x9A, 0xA2,
+                0x8F, 0x97, 0x81, 0x9B, 0x9A, 0xAD, 0x8F, 0x80,
+                0x98, 0x8F, 0x9D, 0xB8, 0x87, 0x8B, 0x99, 0xEE
             ]
-            len = bytes.count
-            buf = UnsafeMutablePointer<UInt8>.allocate(capacity: len)
-            buf.update(from: bytes, count: len)
         } else if #available(iOS 13.0, *) {
-            let bytes: [UInt8] = [
-                0x5F ^ xorKey, 0x55 ^ xorKey, 0x49 ^ xorKey, 0x54 ^ xorKey, 0x65 ^ xorKey, 0x78 ^ xorKey,
-                0x74 ^ xorKey, 0x46 ^ xorKey, 0x69 ^ xorKey, 0x65 ^ xorKey, 0x6C ^ xorKey, 0x64 ^ xorKey,
-                0x43 ^ xorKey, 0x61 ^ xorKey, 0x6E ^ xorKey, 0x76 ^ xorKey, 0x61 ^ xorKey, 0x73 ^ xorKey,
-                0x56 ^ xorKey, 0x69 ^ xorKey, 0x65 ^ xorKey, 0x77 ^ xorKey, 0x00 ^ xorKey
+            bytes = [
+                0xB1, 0xBB, 0xA7, 0xBA, 0x8B, 0x96, 0x9A, 0xA8,
+                0x87, 0x8B, 0x82, 0x8A, 0xAD, 0x8F, 0x80, 0x98,
+                0x8F, 0x9D, 0xB8, 0x87, 0x8B, 0x99, 0xEE
             ]
-            len = bytes.count
-            buf = UnsafeMutablePointer<UInt8>.allocate(capacity: len)
-            buf.update(from: bytes, count: len)
         } else if #available(iOS 12.0, *) {
-            let bytes: [UInt8] = [
-                0x5F ^ xorKey, 0x55 ^ xorKey, 0x49 ^ xorKey, 0x54 ^ xorKey, 0x65 ^ xorKey, 0x78 ^ xorKey,
-                0x74 ^ xorKey, 0x46 ^ xorKey, 0x69 ^ xorKey, 0x65 ^ xorKey, 0x6C ^ xorKey, 0x64 ^ xorKey,
-                0x43 ^ xorKey, 0x6F ^ xorKey, 0x6E ^ xorKey, 0x74 ^ xorKey, 0x65 ^ xorKey, 0x6E ^ xorKey,
-                0x74 ^ xorKey, 0x56 ^ xorKey, 0x69 ^ xorKey, 0x65 ^ xorKey, 0x77 ^ xorKey, 0x00 ^ xorKey
+            bytes = [
+                0xB1, 0xBB, 0xA7, 0xBA, 0x8B, 0x96, 0x9A, 0xA8,
+                0x87, 0x8B, 0x82, 0x8A, 0xAD, 0x81, 0x80, 0x9A,
+                0x8B, 0x80, 0x9A, 0xB8, 0x87, 0x8B, 0x99, 0xEE
             ]
-            len = bytes.count
-            buf = UnsafeMutablePointer<UInt8>.allocate(capacity: len)
-            buf.update(from: bytes, count: len)
         } else {
             return nil
         }
 
-        // Reverse XOR to retrieve the original class name
-        buf.withMemoryRebound(to: UInt8.self, capacity: len) { ptr in
-            for i in 0..<len {
-                ptr[i] ^= xorKey
-            }
+        let className = bytes.map { $0 ^ xorKey }.withUnsafeBufferPointer {
+            String(cString: $0.baseAddress!)
         }
-
-        let className = String(cString: buf)
-        buf.deallocate()
-
         let textField = UITextField()
         for subview in textField.subviews {
             if NSStringFromClass(type(of: subview)) == className {
